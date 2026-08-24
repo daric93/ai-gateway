@@ -178,6 +178,14 @@ Currently, supported addons are:
   <Link href={`https://github.com/theagentrouter/agent-router/blob/${vars.aigwGitRef}/examples/token_ratelimit/envoy-gateway-values-addon.yaml`}>
   {`https://github.com/theagentrouter/agent-router/blob/${vars.aigwGitRef}/examples/token_ratelimit/envoy-gateway-values-addon.yaml`}
   </Link>
+
+  Rate limiting counters live in a Redis-protocol store, and this addon points the
+  rate limit service at the Redis deployment from the same directory. To use Valkey
+  instead, swap in the Valkey addon, which is identical apart from the backend URL:
+  <Link href={`https://github.com/theagentrouter/agent-router/blob/${vars.aigwGitRef}/examples/token_ratelimit/envoy-gateway-values-valkey-addon.yaml`}>
+  {`https://github.com/theagentrouter/agent-router/blob/${vars.aigwGitRef}/examples/token_ratelimit/envoy-gateway-values-valkey-addon.yaml`}
+  </Link>
+
 - [**InferencePool**](../capabilities/inference/index.md):
   <Link href={`https://github.com/theagentrouter/agent-router/blob/${vars.aigwGitRef}/examples/inference-pool/envoy-gateway-values-addon.yaml`}>
   {`https://github.com/theagentrouter/agent-router/blob/${vars.aigwGitRef}/examples/inference-pool/envoy-gateway-values-addon.yaml`}

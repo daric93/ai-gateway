@@ -1,0 +1,59 @@
+# Copyright Envoy AI Gateway Authors
+# SPDX-License-Identifier: Apache-2.0
+# The full text of the Apache license is available in the LICENSE file at
+# the root of the repo.
+
+# This is a simple example of a Valkey deployment that is used by the Envoy
+# Gateway rate limiting feature through Valkey's Redis protocol interface. It is
+# an alternative to redis.yaml in this directory, not an addition to it.
+#
+# This is only necessary if you want to use the rate limit feature.
+# When enabling rate limiting, you need to configure Envoy Gateway to point to this Valkey instance.
+# See the envoy-gateway-values-valkey-addon.yaml file in this directory for the complete configuration example.
+#
+# The image is pinned so the example matches the version the end-to-end tests
+# exercise. Any Valkey release that speaks the Redis protocol commands the rate
+# limit service uses should work.
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: valkey-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: valkey
+  namespace: valkey-system
+  labels:
+    app: valkey
+spec:
+  ports:
+    - name: valkey
+      port: 6379
+  selector:
+    app: valkey
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: valkey
+  namespace: valkey-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: valkey
+  template:
+    metadata:
+      labels:
+        app: valkey
+    spec:
+      containers:
+        - image: valkey/valkey:8.1.8-alpine
+          imagePullPolicy: IfNotPresent
+          name: valkey
+          ports:
+            - name: valkey
+              containerPort: 6379
+      restartPolicy: Always

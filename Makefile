@@ -241,6 +241,13 @@ test-e2e: build-e2e ## Run the end-to-end tests with a local kind cluster.
 	@echo "Run E2E tests"
 	@go test -v ./tests/e2e/... $(GO_TEST_ARGS) $(GO_TEST_E2E_ARGS)
 
+# This runs the rate-limit end-to-end tests against Valkey instead of Redis. The
+# default test-e2e target continues to run them against Redis.
+.PHONY: test-e2e-ratelimit-valkey
+test-e2e-ratelimit-valkey: build-e2e ## Run rate-limit e2e tests against Valkey.
+	@echo "Run Valkey rate-limit E2E tests"
+	@E2E_RATELIMIT_STORAGE=valkey go test -v ./tests/e2e/... -run 'Test_Examples_(TokenRateLimit|BackendQuotaRateLimit)$$' $(GO_TEST_ARGS) $(GO_TEST_E2E_ARGS)
+
 # TODO: remove this once there's a new release for GAIE
 # contains https://github.com/kubernetes-sigs/gateway-api-inference-extension/pull/3033
 WORKAROUND_GAIE_EPP_IMAGE ?= us-central1-docker.pkg.dev/k8s-staging-images/gateway-api-inference-extension/lwepp:main

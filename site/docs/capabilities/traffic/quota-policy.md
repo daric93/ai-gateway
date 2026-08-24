@@ -38,10 +38,18 @@ Key features of QuotaPolicy:
 :::tip Prerequisites
 Quota enforcement uses the same infrastructure as usage-based rate limiting:
 
-1. **Redis Deployment**: A Redis instance for storing quota counters. See the [redis.yaml example](https://github.com/theagentrouter/agent-router/blob/main/examples/token_ratelimit/redis.yaml) for a simple deployment.
-2. **Envoy Gateway Configuration**: Envoy Gateway must be configured at installation time to enable rate limiting and point to your Redis instance. See the [Envoy Gateway Installation Guide](../../getting-started/prerequisites.md#additional-features-rate-limiting-inferencepool-etc).
+1. **Redis-protocol backend**: An instance of a Redis-protocol store for the quota counters, which the external `envoyproxy/ratelimit` service writes to. Both Redis and Valkey are supported. See the [redis.yaml example](https://github.com/theagentrouter/agent-router/blob/main/examples/token_ratelimit/redis.yaml) or the [valkey.yaml example](https://github.com/theagentrouter/agent-router/blob/main/examples/token_ratelimit/valkey.yaml) for a simple deployment.
+2. **Envoy Gateway Configuration**: Envoy Gateway must be configured at installation time to enable rate limiting and point to the selected backend. See the [Envoy Gateway Installation Guide](../../getting-started/prerequisites.md#additional-features-rate-limiting-inferencepool-etc).
 
 See [Usage-based Rate Limiting](./usage-based-ratelimiting.md) for more detail on the rate limit infrastructure that QuotaPolicy builds on.
+:::
+
+:::note Valkey compatibility
+
+Valkey is a drop-in replacement for Redis here, not a new backend type: keep `rateLimit.backend.type: Redis` and point `rateLimit.backend.redis.url` at the Valkey Service.
+
+`valkey/valkey:8.1.8-alpine` is validated end to end against the quota counter and `429` enforcement flows described above. Semantic caching and using a Redis-protocol store as an Agent Router datastore are outside this scope. See [Usage-based Rate Limiting](./usage-based-ratelimiting.md#configuration) for the shared prerequisites.
+
 :::
 
 ## Configuration
