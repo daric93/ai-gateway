@@ -308,7 +308,8 @@ jobs:
     name: E2E Test for Rate Limiting on Valkey
     # The default test_e2e job already covers these tests on Redis. This job runs the
     # same two rate limit tests against Valkey to keep the Redis-protocol backend
-    # swap honest, so it only needs the latest stable EG version.
+    # swap honest. The backend swap does not depend on the EG version, so a single
+    # pin is enough here rather than the version matrix test_e2e runs.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4

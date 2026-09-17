@@ -49,6 +49,10 @@ func applyQuotaRateLimitManifest(t *testing.T, storage *e2elib.RateLimitStorage)
 		return
 	}
 
+	// Only the URL is substituted. The REDIS_SOCKET_TYPE and REDIS_URL env names,
+	// and the Redis-derived deployment names, are the envoyproxy/ratelimit image's
+	// own configuration keys and stay as-is: Valkey is reached over the Redis
+	// protocol, so it is the same config pointed at a different address.
 	contents, err := os.ReadFile(manifest)
 	require.NoError(t, err)
 	rendered := strings.ReplaceAll(string(contents), defaultRateLimitStorageURL, storage.URL)

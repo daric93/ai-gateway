@@ -20,9 +20,9 @@
 # Prerequisites:
 # - Valkey must be deployed (see valkey.yaml in this directory)
 #
-# This is the Valkey counterpart of envoy-gateway-values-addon.yaml. Apart from
-# the backend URL the two files are identical, so keep the rate limit image pin
-# below in sync with the one there.
+# This is the Valkey counterpart of envoy-gateway-values-addon.yaml. The rate
+# limit config below is identical to that file's apart from the backend URL, so
+# keep the rate limit image pin in sync with the one there.
 
 config:
   envoyGateway:
