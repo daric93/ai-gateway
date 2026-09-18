@@ -37,9 +37,11 @@ const tenantIDMetricsLabel = "tenant_id"
 
 func Test_Examples_TokenRateLimit(t *testing.T) {
 	const manifestDir = "../../examples/token_ratelimit"
+	storage, err := e2elib.SelectedRateLimitStorage()
+	require.NoError(t, err)
 	// Apply specific manifest files, not the entire directory (to avoid applying Helm values files)
 	manifests := []string{
-		manifestDir + "/redis.yaml",
+		storage.Manifest,
 		manifestDir + "/token_ratelimit.yaml",
 	}
 	for _, manifest := range manifests {
@@ -54,12 +56,12 @@ func Test_Examples_TokenRateLimit(t *testing.T) {
 	const egSelector = "gateway.envoyproxy.io/owning-gateway-name=envoy-ai-gateway-token-ratelimit"
 	e2elib.RequireWaitForGatewayPodReady(t, egSelector)
 
-	// Wait for the redis pod to be ready so that the rate limit can be performed correctly.
-	// Until the redis pod is ready, envoy-ratelimit deployment will be in CrashLoopBackOff, so restart it so
+	// Wait for the selected Redis-protocol backend to be ready before rate limiting.
+	// Until it is ready, envoy-ratelimit deployment will be in CrashLoopBackOff, so restart it so
 	// we can have it up and running faster in a clean state.
 	require.NoError(t, e2elib.KubectlRestartDeployment(t.Context(), e2elib.EnvoyGatewayNamespace, "envoy-ratelimit"))
 	e2elib.RequireWaitForPodReady(t, e2elib.EnvoyGatewayNamespace, "app.kubernetes.io/component=ratelimit")
-	e2elib.RequireWaitForPodReady(t, "redis-system", "app=redis")
+	e2elib.RequireWaitForPodReady(t, storage.Namespace, storage.PodSelector)
 
 	const modelName = "rate-limit-funky-model"
 	makeRequest := func(userID string, input, output, total int, cachedInput *int, expStatus int) {

@@ -408,6 +408,63 @@ func EnvoyGatewaySupportsLimitFromMetadata() bool {
 	return EnvoyGatewayVersion() == EnvoyGatewayLatestVersion
 }
 
+// RateLimitStorageEnvVar selects which Redis-protocol backend the rate limit e2e
+// tests run against. Empty or "redis" keeps the default Redis example; "valkey"
+// runs the same tests against the Valkey example.
+const RateLimitStorageEnvVar = "E2E_RATELIMIT_STORAGE"
+
+// RateLimitStorage describes the Redis-protocol backend used by the e2e rate limit tests.
+// Envoy Gateway's rate limit backend type is Redis for both choices, since Valkey
+// is reached over the same protocol rather than through a distinct backend type.
+type RateLimitStorage struct {
+	// Name identifies the backend in test failure messages.
+	Name string
+	// Manifest deploys the backend itself.
+	Manifest string
+	// ValuesAddon is the Envoy Gateway values file pointing the rate limit
+	// service at this backend.
+	ValuesAddon string
+	// Namespace, PodSelector and Deployment locate the running backend.
+	Namespace   string
+	PodSelector string
+	Deployment  string
+	// CLI is the in-pod client used to read counters back.
+	CLI string
+	// URL is the in-cluster address the rate limit service connects to.
+	URL string
+}
+
+// SelectedRateLimitStorage returns the storage backend selected by
+// RateLimitStorageEnvVar, or an error if the value is not recognized.
+func SelectedRateLimitStorage() (*RateLimitStorage, error) {
+	switch v := os.Getenv(RateLimitStorageEnvVar); v {
+	case "", "redis":
+		return &RateLimitStorage{
+			Name:        "Redis",
+			Manifest:    "../../examples/token_ratelimit/redis.yaml",
+			ValuesAddon: "../../examples/token_ratelimit/envoy-gateway-values-addon.yaml",
+			Namespace:   "redis-system",
+			PodSelector: "app=redis",
+			Deployment:  "redis",
+			CLI:         "redis-cli",
+			URL:         "redis.redis-system.svc.cluster.local:6379",
+		}, nil
+	case "valkey":
+		return &RateLimitStorage{
+			Name:        "Valkey",
+			Manifest:    "../../examples/token_ratelimit/valkey.yaml",
+			ValuesAddon: "../../examples/token_ratelimit/envoy-gateway-values-valkey-addon.yaml",
+			Namespace:   "valkey-system",
+			PodSelector: "app=valkey",
+			Deployment:  "valkey",
+			CLI:         "valkey-cli",
+			URL:         "valkey.valkey-system.svc.cluster.local:6379",
+		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported %s value %q: use redis or valkey", RateLimitStorageEnvVar, v)
+	}
+}
+
 // initEnvoyGateway initializes the Envoy Gateway in the kind cluster following the quickstart guide:
 // https://gateway.envoyproxy.io/latest/tasks/quickstart/
 func initEnvoyGateway(ctx context.Context, namespace string, inferenceExtension bool) (err error) {
@@ -419,13 +476,17 @@ func initEnvoyGateway(ctx context.Context, namespace string, inferenceExtension 
 		initLog(fmt.Sprintf("\tdone (took %.2fs in total)", elapsed.Seconds()))
 	}()
 	initLog("\tHelm Install")
+	rateLimitStorage, err := SelectedRateLimitStorage()
+	if err != nil {
+		return err
+	}
 	// Build helm command with base values + addons based on what features are needed
 	helmArgs := []string{
 		"upgrade", "-i", "eg",
 		"oci://docker.io/envoyproxy/gateway-helm", "--version", egVersion,
 		"-n", "envoy-gateway-system", "--create-namespace",
 		"-f", "../../manifests/envoy-gateway-values.yaml",
-		"-f", "../../examples/token_ratelimit/envoy-gateway-values-addon.yaml",
+		"-f", rateLimitStorage.ValuesAddon,
 		"--set", fmt.Sprintf("config.envoyGateway.extensionManager.service.fqdn.hostname=ai-gateway-controller.%s.svc.cluster.local", namespace),
 	}
 	if inferenceExtension {

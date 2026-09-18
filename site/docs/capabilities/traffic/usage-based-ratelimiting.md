@@ -71,9 +71,17 @@ matching requests are limited until the window has enough capacity again.
 
 Rate limiting requires two components to be configured:
 
-1. **Redis Deployment**: A Redis instance must be running to store rate limit data. See the [redis.yaml example](https://github.com/theagentrouter/agent-router/blob/main/examples/token_ratelimit/redis.yaml) for a simple deployment.
+1. **Redis-protocol backend**: An instance of a Redis-protocol store must be running to store rate limit data. The external `envoyproxy/ratelimit` service owns that connection, and both Redis and Valkey are supported. See the [redis.yaml example](https://github.com/theagentrouter/agent-router/blob/main/examples/token_ratelimit/redis.yaml) or the [valkey.yaml example](https://github.com/theagentrouter/agent-router/blob/main/examples/token_ratelimit/valkey.yaml) for a simple deployment.
 
-2. **Envoy Gateway Configuration**: Envoy Gateway must be configured at installation time to enable rate limiting and point to your Redis instance. See [Envoy Gateway Installation Guide](../../getting-started/prerequisites.md#additional-features-rate-limiting-inferencepool-etc)
+2. **Envoy Gateway Configuration**: Envoy Gateway must be configured at installation time to enable rate limiting and point to the selected backend. See [Envoy Gateway Installation Guide](../../getting-started/prerequisites.md#additional-features-rate-limiting-inferencepool-etc)
+
+:::
+
+:::note Valkey compatibility
+
+Valkey is a drop-in replacement for Redis here, not a new backend type: keep `rateLimit.backend.type: Redis` and point `rateLimit.backend.redis.url` at the Valkey Service.
+
+`valkey/valkey:8.1.8-alpine` is validated end to end against the token rate limit and quota rate limit flows on this page and in [Quota Policy](./quota-policy.md) — token counters are charged from LLM responses, and matching requests are rejected with `429` once a bucket is over its limit. Semantic caching and using a Redis-protocol store as an AI Gateway datastore are outside this scope.
 
 :::
 

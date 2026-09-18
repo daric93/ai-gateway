@@ -302,6 +302,40 @@ jobs:
         env:
           EG_VERSION: v1.8.1
 
+  test_e2e_ratelimit_valkey:
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    name: E2E Test for Rate Limiting on Valkey
+    # The default test_e2e job already covers these tests on Redis. This job runs the
+    # same two rate limit tests against Valkey to keep the Redis-protocol backend
+    # swap honest. The backend swap does not depend on the EG version, so a single
+    # pin is enough here rather than the version matrix test_e2e runs.
+    #
+    # The pin has to be a version that accepts examples/token_ratelimit/token_ratelimit.yaml:
+    # EG v1.8.1 rejects its global rate limit rules with "Maximum boundary value must be of
+    # type integer with format int32 in spec.rateLimit.global.rules[*].limit.requests", so
+    # it cannot run Test_Examples_TokenRateLimit. test_e2e only runs that test on
+    # v0.0.0-latest / v1.9.1 / v1.8.4, which is why v1.8.1 never surfaced it there.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v5
+        with:
+          cache: false
+          go-version-file: go.mod
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/.cache/golangci-lint
+            ~/go/pkg/mod
+            ~/go/bin
+          key: e2e-test-${{ hashFiles('**/go.mod', '**/go.sum', '**/Makefile') }}
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      - run: make test-e2e-ratelimit-valkey
+        env:
+          EG_VERSION: v1.9.1
+
   test_e2e_namespaced:
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}

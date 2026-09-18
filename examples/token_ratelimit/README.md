@@ -7,13 +7,15 @@ of each request.
 
 ## Files in This Directory
 
-- **`envoy-gateway-values-addon.yaml`**: Envoy Gateway values addon for rate limiting. Combine with `../../manifests/envoy-gateway-values.yaml`.
-- **`redis.yaml`**: Redis deployment required for rate limiting. Deploy this before enabling rate limiting in Envoy Gateway.
+- **`envoy-gateway-values-addon.yaml`** and **`redis.yaml`**: Redis rate-limit backend and matching Envoy Gateway values addon.
+- **`envoy-gateway-values-valkey-addon.yaml`** and **`valkey.yaml`**: Valkey rate-limit backend and matching values addon. The example pins `valkey/valkey:8.1.8-alpine`.
 - **`token_ratelimit.yaml`**: Example AIGatewayRoute configuration that demonstrates token-based rate limiting.
 
 ## Quick Start
 
-1. Install Envoy Gateway with base configuration + rate limiting addon:
+1. Choose a Redis-protocol rate-limit backend and install Envoy Gateway with its matching addon.
+
+   Redis:
 
    ```bash
    helm upgrade -i eg oci://docker.io/envoyproxy/gateway-helm \
@@ -24,10 +26,29 @@ of each request.
      -f envoy-gateway-values-addon.yaml
    ```
 
-2. Deploy Redis:
+   Valkey:
+
+   ```bash
+   helm upgrade -i eg oci://docker.io/envoyproxy/gateway-helm \
+     --version v0.0.0-latest \
+     --namespace envoy-gateway-system \
+     --create-namespace \
+     -f ../../manifests/envoy-gateway-values.yaml \
+     -f envoy-gateway-values-valkey-addon.yaml
+   ```
+
+2. Deploy the backend selected in the previous step:
+
+   Redis:
 
    ```bash
    kubectl apply -f redis.yaml
+   ```
+
+   Valkey (pinned to `valkey/valkey:8.1.8-alpine`):
+
+   ```bash
+   kubectl apply -f valkey.yaml
    ```
 
 3. Apply the token rate limit example:
